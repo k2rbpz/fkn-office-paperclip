@@ -339,12 +339,16 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   });
   const prompt = instructionsPrefix + rawPrompt;
 
+  const paperclipSkillsDir = await resolvePaperclipSkillsDir();
   const buildGeminiArgs = (resumeSessionId: string | null) => {
     const args = ["-p", "", "--output-format", "stream-json"];
     if (resumeSessionId) args.push("--resume", resumeSessionId);
     if (dangerouslySkipPermissions) args.push("--yolo");
     if (model) args.push("--model", model);
     args.push("--include-directories", skillsDir);
+    if (paperclipSkillsDir) {
+      args.push("--include-directories", paperclipSkillsDir);
+    }
     if (extraArgs.length > 0) args.push(...extraArgs);
     return args;
   };
