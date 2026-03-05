@@ -348,6 +348,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     args.push("--include-directories", skillsDir);
     if (paperclipSkillsDir) {
       args.push("--include-directories", paperclipSkillsDir);
+      args.push("--policy", path.join(paperclipSkillsDir, "gemini-default.toml"));
     }
     if (extraArgs.length > 0) args.push(...extraArgs);
     return args;
