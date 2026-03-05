@@ -19,6 +19,7 @@ Core fields:
 - cwd (string, optional): default absolute working directory fallback for the agent process (created if missing when possible)
 - instructionsFilePath (string, optional): absolute path to a markdown instructions file injected at runtime
 - model (string, optional): Gemini model id
+  - Note: In Gemini CLI v0.32.1, the `run_shell_command` tool is only available for Gemini 2.5 and older models. Gemini 3 models have a restricted toolset.
 - effort (string, optional): reasoning effort passed via --effort (low|medium|high)
 - chrome (boolean, optional): pass --chrome when running Gemini
 - promptTemplate (string, optional): run prompt template
