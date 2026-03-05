@@ -51,7 +51,8 @@ type AdapterType =
   | "codex_local"
   | "process"
   | "http"
-  | "openclaw";
+  | "openclaw"
+  | "gemini_sdk";
 
 const DEFAULT_TASK_DESCRIPTION = `Setup yourself as the CEO. Use the ceo persona found here: [https://github.com/paperclipai/companies/blob/main/default/ceo/AGENTS.md](https://github.com/paperclipai/companies/blob/main/default/ceo/AGENTS.md)
 
@@ -148,7 +149,7 @@ export function OnboardingWizard() {
     enabled: onboardingOpen && step === 2
   });
   const isLocalAdapter =
-    adapterType === "claude_local" || adapterType === "codex_local";
+    adapterType === "claude_local" || adapterType === "codex_local" || adapterType === "gemini_sdk";
   const effectiveAdapterCommand =
     command.trim() || (adapterType === "codex_local" ? "codex" : "claude");
 
@@ -501,6 +502,12 @@ export function OnboardingWizard() {
                           desc: "Local Codex agent"
                         },
                         {
+                          value: "gemini_sdk" as const,
+                          label: "Gemini SDK",
+                          icon: Sparkles,
+                          desc: "Google GenAI API"
+                        },
+                        {
                           value: "openclaw" as const,
                           label: "OpenClaw",
                           icon: Bot,
@@ -561,84 +568,85 @@ export function OnboardingWizard() {
 
                   {/* Conditional adapter fields */}
                   {(adapterType === "claude_local" ||
-                    adapterType === "codex_local") && (
-                    <div className="space-y-3">
-                      <div>
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <label className="text-xs text-muted-foreground">
-                            Working directory
+                    adapterType === "codex_local" ||
+                    adapterType === "gemini_sdk") && (
+                      <div className="space-y-3">
+                        <div>
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <label className="text-xs text-muted-foreground">
+                              Working directory
+                            </label>
+                            <HintIcon text="Paperclip works best if you create a new folder for your agents to keep their memories and stay organized. Create a new folder and put the path here." />
+                          </div>
+                          <div className="flex items-center gap-2 rounded-md border border-border px-2.5 py-1.5">
+                            <FolderOpen className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <input
+                              className="w-full bg-transparent outline-none text-sm font-mono placeholder:text-muted-foreground/50"
+                              placeholder="/path/to/project"
+                              value={cwd}
+                              onChange={(e) => setCwd(e.target.value)}
+                            />
+                            <ChoosePathButton />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">
+                            Model
                           </label>
-                          <HintIcon text="Paperclip works best if you create a new folder for your agents to keep their memories and stay organized. Create a new folder and put the path here." />
-                        </div>
-                        <div className="flex items-center gap-2 rounded-md border border-border px-2.5 py-1.5">
-                          <FolderOpen className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          <input
-                            className="w-full bg-transparent outline-none text-sm font-mono placeholder:text-muted-foreground/50"
-                            placeholder="/path/to/project"
-                            value={cwd}
-                            onChange={(e) => setCwd(e.target.value)}
-                          />
-                          <ChoosePathButton />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">
-                          Model
-                        </label>
-                        <Popover open={modelOpen} onOpenChange={setModelOpen}>
-                          <PopoverTrigger asChild>
-                            <button className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-sm hover:bg-accent/50 transition-colors w-full justify-between">
-                              <span
-                                className={cn(
-                                  !model && "text-muted-foreground"
-                                )}
-                              >
-                                {selectedModel
-                                  ? selectedModel.label
-                                  : model || "Default"}
-                              </span>
-                              <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent
-                            className="w-[var(--radix-popover-trigger-width)] p-1"
-                            align="start"
-                          >
-                            <button
-                              className={cn(
-                                "flex items-center gap-2 w-full px-2 py-1.5 text-sm rounded hover:bg-accent/50",
-                                !model && "bg-accent"
-                              )}
-                              onClick={() => {
-                                setModel("");
-                                setModelOpen(false);
-                              }}
+                          <Popover open={modelOpen} onOpenChange={setModelOpen}>
+                            <PopoverTrigger asChild>
+                              <button className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-sm hover:bg-accent/50 transition-colors w-full justify-between">
+                                <span
+                                  className={cn(
+                                    !model && "text-muted-foreground"
+                                  )}
+                                >
+                                  {selectedModel
+                                    ? selectedModel.label
+                                    : model || "Default"}
+                                </span>
+                                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              className="w-[var(--radix-popover-trigger-width)] p-1"
+                              align="start"
                             >
-                              Default
-                            </button>
-                            {(adapterModels ?? []).map((m) => (
                               <button
-                                key={m.id}
                                 className={cn(
-                                  "flex items-center justify-between w-full px-2 py-1.5 text-sm rounded hover:bg-accent/50",
-                                  m.id === model && "bg-accent"
+                                  "flex items-center gap-2 w-full px-2 py-1.5 text-sm rounded hover:bg-accent/50",
+                                  !model && "bg-accent"
                                 )}
                                 onClick={() => {
-                                  setModel(m.id);
+                                  setModel("");
                                   setModelOpen(false);
                                 }}
                               >
-                                <span>{m.label}</span>
-                                <span className="text-xs text-muted-foreground font-mono">
-                                  {m.id}
-                                </span>
+                                Default
                               </button>
-                            ))}
-                          </PopoverContent>
-                        </Popover>
+                              {(adapterModels ?? []).map((m) => (
+                                <button
+                                  key={m.id}
+                                  className={cn(
+                                    "flex items-center justify-between w-full px-2 py-1.5 text-sm rounded hover:bg-accent/50",
+                                    m.id === model && "bg-accent"
+                                  )}
+                                  onClick={() => {
+                                    setModel(m.id);
+                                    setModelOpen(false);
+                                  }}
+                                >
+                                  <span>{m.label}</span>
+                                  <span className="text-xs text-muted-foreground font-mono">
+                                    {m.id}
+                                  </span>
+                                </button>
+                              ))}
+                            </PopoverContent>
+                          </Popover>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   {isLocalAdapter && (
                     <div className="space-y-2 rounded-md border border-border p-3">
@@ -678,7 +686,9 @@ export function OnboardingWizard() {
                         <p className="text-muted-foreground font-mono break-all">
                           {adapterType === "codex_local"
                             ? `${effectiveAdapterCommand} exec --json -`
-                            : `${effectiveAdapterCommand} --print - --output-format stream-json --verbose`}
+                            : adapterType === "gemini_sdk"
+                              ? "Test API Key validation"
+                              : `${effectiveAdapterCommand} --print - --output-format stream-json --verbose`}
                         </p>
                         <p className="text-muted-foreground">
                           Prompt:{" "}

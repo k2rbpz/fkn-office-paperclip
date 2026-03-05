@@ -56,6 +56,7 @@ export const adapterLabels: Record<string, string> = {
   cursor: "Cursor",
   process: "Process",
   http: "HTTP",
+  gemini_sdk: "Gemini SDK",
 };
 
 export const roleLabels: Record<string, string> = {

@@ -12,6 +12,14 @@ import {
 } from "@paperclipai/adapter-codex-local/server";
 import { agentConfigurationDoc as codexAgentConfigurationDoc, models as codexModels } from "@paperclipai/adapter-codex-local";
 import {
+  execute as geminiExecute,
+  testEnvironment as geminiTestEnvironment,
+} from "@paperclipai/adapter-gemini-sdk/server";
+import {
+  agentConfigurationDoc as geminiAgentConfigurationDoc,
+  models as geminiModels,
+} from "@paperclipai/adapter-gemini-sdk";
+import {
   execute as openclawExecute,
   testEnvironment as openclawTestEnvironment,
 } from "@paperclipai/adapter-openclaw/server";
@@ -53,8 +61,17 @@ const openclawAdapter: ServerAdapterModule = {
   agentConfigurationDoc: openclawAgentConfigurationDoc,
 };
 
+const geminiSdkAdapter: ServerAdapterModule = {
+  type: "gemini_sdk",
+  execute: geminiExecute,
+  testEnvironment: geminiTestEnvironment,
+  models: geminiModels,
+  supportsLocalAgentJwt: true,
+  agentConfigurationDoc: geminiAgentConfigurationDoc,
+};
+
 const adaptersByType = new Map<string, ServerAdapterModule>(
-  [claudeLocalAdapter, codexLocalAdapter, openclawAdapter, processAdapter, httpAdapter].map((a) => [a.type, a]),
+  [claudeLocalAdapter, codexLocalAdapter, openclawAdapter, processAdapter, httpAdapter, geminiSdkAdapter].map((a) => [a.type, a]),
 );
 
 export function getServerAdapter(type: string): ServerAdapterModule {
