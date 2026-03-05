@@ -20,11 +20,12 @@ import { agentConfigurationDoc as cursorAgentConfigurationDoc, models as cursorM
 import {
   execute as geminiExecute,
   testEnvironment as geminiTestEnvironment,
-} from "@paperclipai/adapter-gemini-sdk/server";
+  sessionCodec as geminiSessionCodec,
+} from "@paperclipai/adapter-gemini-local/server";
 import {
   agentConfigurationDoc as geminiAgentConfigurationDoc,
   models as geminiModels,
-} from "@paperclipai/adapter-gemini-sdk";
+} from "@paperclipai/adapter-gemini-local";
 import {
   execute as opencodeExecute,
   testEnvironment as opencodeTestEnvironment,
@@ -95,17 +96,18 @@ const openclawAdapter: ServerAdapterModule = {
   agentConfigurationDoc: openclawAgentConfigurationDoc,
 };
 
-const geminiSdkAdapter: ServerAdapterModule = {
-  type: "gemini_sdk",
+const geminiLocalAdapter: ServerAdapterModule = {
+  type: "gemini_local",
   execute: geminiExecute,
   testEnvironment: geminiTestEnvironment,
+  sessionCodec: geminiSessionCodec,
   models: geminiModels,
   supportsLocalAgentJwt: true,
   agentConfigurationDoc: geminiAgentConfigurationDoc,
 };
 
 const adaptersByType = new Map<string, ServerAdapterModule>(
-  [claudeLocalAdapter, codexLocalAdapter, opencodeLocalAdapter, cursorLocalAdapter, openclawAdapter, processAdapter, httpAdapter, geminiSdkAdapter].map((a) => [a.type, a]),
+  [claudeLocalAdapter, codexLocalAdapter, opencodeLocalAdapter, cursorLocalAdapter, openclawAdapter, processAdapter, httpAdapter, geminiLocalAdapter].map((a) => [a.type, a]),
 );
 
 export function getServerAdapter(type: string): ServerAdapterModule {

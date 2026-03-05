@@ -57,7 +57,7 @@ export const adapterLabels: Record<string, string> = {
   cursor: "Cursor (local)",
   process: "Process",
   http: "HTTP",
-  gemini_sdk: "Gemini SDK",
+  gemini_local: "Gemini CLI",
 };
 
 export const roleLabels: Record<string, string> = {

@@ -127,18 +127,15 @@ importers:
         specifier: ^5.7.3
         version: 5.9.3
 
-  packages/adapters/gemini-sdk:
+  packages/adapters/gemini-local:
     dependencies:
-      '@google/generative-ai':
-        specifier: ^0.22.0
-        version: 0.22.0
       '@paperclipai/adapter-utils':
         specifier: workspace:*
         version: link:../../adapter-utils
+      picocolors:
+        specifier: ^1.1.1
+        version: 1.1.1
     devDependencies:
-      '@types/node':
-        specifier: ^22.10.0
-        version: 22.19.11
       typescript:
         specifier: ^5.7.3
         version: 5.9.3
@@ -218,9 +215,9 @@ importers:
       '@paperclipai/adapter-cursor-local':
         specifier: workspace:*
         version: link:../packages/adapters/cursor-local
-      '@paperclipai/adapter-gemini-sdk':
+      '@paperclipai/adapter-gemini-local':
         specifier: workspace:*
-        version: link:../packages/adapters/gemini-sdk
+        version: link:../packages/adapters/gemini-local
       '@paperclipai/adapter-openclaw':
         specifier: workspace:*
         version: link:../packages/adapters/openclaw
@@ -333,6 +330,9 @@ importers:
       '@paperclipai/adapter-cursor-local':
         specifier: workspace:*
         version: link:../packages/adapters/cursor-local
+      '@paperclipai/adapter-gemini-local':
+        specifier: workspace:*
+        version: link:../packages/adapters/gemini-local
       '@paperclipai/adapter-openclaw':
         specifier: workspace:*
         version: link:../packages/adapters/openclaw
@@ -1407,10 +1407,6 @@ packages:
 
   '@floating-ui/utils@0.2.10':
     resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
-
-  '@google/generative-ai@0.22.0':
-    resolution: {integrity: sha512-mLR3PDWCk5O/BWNyDvFDIiwKeXQmFGZ+kJFd9m73QrUPCFREttJyVbBPTW4y9CwTbaltLMDaLDfroCrRv5Bl8Q==}
-    engines: {node: '>=18.0.0'}
 
   '@inquirer/external-editor@1.0.3':
     resolution: {integrity: sha512-RWbSrDiYmO4LbejWY7ttpxczuwQyZLBUyygsA9Nsv95hpzUWwnNTVQmAq3xuh7vNwCp07UTmE5i11XAEExx4RA==}
@@ -6494,8 +6490,6 @@ snapshots:
       tabbable: 6.4.0
 
   '@floating-ui/utils@0.2.10': {}
-
-  '@google/generative-ai@0.22.0': {}
 
   '@inquirer/external-editor@1.0.3(@types/node@22.19.11)':
     dependencies:

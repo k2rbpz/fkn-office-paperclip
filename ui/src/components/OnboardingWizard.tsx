@@ -46,6 +46,7 @@ import {
   ChevronDown,
   X
 } from "lucide-react";
+import { GeminiLogo } from "./GeminiLogo";
 
 type Step = 1 | 2 | 3 | 4;
 type AdapterType =
@@ -56,7 +57,14 @@ type AdapterType =
   | "process"
   | "http"
   | "openclaw"
-  | "gemini_sdk";
+  | "gemini_local";
+
+const THINKING_EFFORT_OPTIONS = [
+  { id: "", label: "Auto" },
+  { id: "low", label: "Low" },
+  { id: "medium", label: "Medium" },
+  { id: "high", label: "High" },
+] as const;
 
 const DEFAULT_TASK_DESCRIPTION = `Setup yourself as the CEO. Use the ceo persona found here: [https://github.com/paperclipai/companies/blob/main/default/ceo/AGENTS.md](https://github.com/paperclipai/companies/blob/main/default/ceo/AGENTS.md)
 
@@ -77,6 +85,7 @@ export function OnboardingWizard() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modelOpen, setModelOpen] = useState(false);
+  const [thinkingEffortOpen, setThinkingEffortOpen] = useState(false);
 
   // Step 1
   const [companyName, setCompanyName] = useState("");
@@ -87,6 +96,7 @@ export function OnboardingWizard() {
   const [adapterType, setAdapterType] = useState<AdapterType>("claude_local");
   const [cwd, setCwd] = useState("");
   const [model, setModel] = useState("");
+  const [thinkingEffort, setThinkingEffort] = useState("");
   const [command, setCommand] = useState("");
   const [args, setArgs] = useState("");
   const [url, setUrl] = useState("");
@@ -160,7 +170,7 @@ export function OnboardingWizard() {
     adapterType === "codex_local" ||
     adapterType === "opencode_local" ||
     adapterType === "cursor" ||
-    adapterType === "gemini_sdk";
+    adapterType === "gemini_local";
   const effectiveAdapterCommand =
     command.trim() ||
     (adapterType === "codex_local"
@@ -169,7 +179,9 @@ export function OnboardingWizard() {
         ? "agent"
         : adapterType === "opencode_local"
           ? "opencode"
-          : "claude");
+          : adapterType === "gemini_local"
+            ? "gemini"
+            : "claude");
 
   useEffect(() => {
     if (step !== 2) return;
@@ -236,6 +248,7 @@ export function OnboardingWizard() {
       command,
       args,
       url,
+      thinkingEffort,
       dangerouslySkipPermissions: adapterType === "claude_local",
       dangerouslyBypassSandbox:
         adapterType === "codex_local"
@@ -599,10 +612,10 @@ export function OnboardingWizard() {
                           desc: "Local OpenCode agent"
                         },
                         {
-                          value: "gemini_sdk" as const,
-                          label: "Gemini SDK",
-                          icon: Sparkles,
-                          desc: "Google GenAI API"
+                          value: "gemini_local" as const,
+                          label: "Gemini CLI",
+                          icon: GeminiLogo,
+                          desc: "Google Gemini CLI"
                         },
                         {
                           value: "openclaw" as const,
@@ -676,7 +689,7 @@ export function OnboardingWizard() {
                     adapterType === "codex_local" ||
                     adapterType === "opencode_local" ||
                     adapterType === "cursor" ||
-                    adapterType === "gemini_sdk") && (
+                    adapterType === "gemini_local") && (
                       <div className="space-y-3">
                         <div>
                           <div className="flex items-center gap-1.5 mb-1">
@@ -752,6 +765,44 @@ export function OnboardingWizard() {
                             </PopoverContent>
                           </Popover>
                         </div>
+
+                        {(adapterType === "claude_local" || adapterType === "gemini_local") && (
+                          <div>
+                            <label className="text-xs text-muted-foreground mb-1 block">
+                              Thinking effort
+                            </label>
+                            <Popover open={thinkingEffortOpen} onOpenChange={setThinkingEffortOpen}>
+                              <PopoverTrigger asChild>
+                                <button className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-sm hover:bg-accent/50 transition-colors w-full justify-between">
+                                  <span>
+                                    {THINKING_EFFORT_OPTIONS.find(o => o.id === thinkingEffort)?.label ?? "Auto"}
+                                  </span>
+                                  <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-[var(--radix-popover-trigger-width)] p-1"
+                                align="start"
+                              >
+                                {THINKING_EFFORT_OPTIONS.map((o) => (
+                                  <button
+                                    key={o.id || "auto"}
+                                    className={cn(
+                                      "flex items-center justify-between w-full px-2 py-1.5 text-sm rounded hover:bg-accent/50",
+                                      o.id === thinkingEffort && "bg-accent"
+                                    )}
+                                    onClick={() => {
+                                      setThinkingEffort(o.id);
+                                      setThinkingEffortOpen(false);
+                                    }}
+                                  >
+                                    <span>{o.label}</span>
+                                  </button>
+                                ))}
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -791,7 +842,7 @@ export function OnboardingWizard() {
                       {shouldSuggestUnsetAnthropicApiKey && (
                         <div className="rounded-md border border-amber-300/60 bg-amber-50/40 px-2.5 py-2 space-y-2">
                           <p className="text-[11px] text-amber-900/90 leading-relaxed">
-                            Claude failed while <span className="font-mono">ANTHROPIC_API_KEY</span> is set.
+                            Gemini failed while <span className="font-mono">PAPERCLIP_API_KEY</span> is set.
                             You can clear it in this CEO adapter config and retry the probe.
                           </p>
                           <Button
@@ -813,8 +864,8 @@ export function OnboardingWizard() {
                             ? `${effectiveAdapterCommand} -p --mode ask --output-format json \"Respond with hello.\"`
                             : adapterType === "codex_local"
                               ? `${effectiveAdapterCommand} exec --json -`
-                              : adapterType === "gemini_sdk"
-                                ? "Test API Key validation"
+                              : adapterType === "gemini_local"
+                                ? `${effectiveAdapterCommand} -p "" --output-format stream-json`
                                 : adapterType === "opencode_local"
                                   ? `${effectiveAdapterCommand} run --format json "Respond with hello."`
                                   : `${effectiveAdapterCommand} --print - --output-format stream-json --verbose`}
@@ -842,7 +893,9 @@ export function OnboardingWizard() {
                         ) : (
                           <p className="text-muted-foreground">
                             If login is required, run{" "}
-                            <span className="font-mono">claude login</span> and
+                            <span className="font-mono">
+                              {adapterType === "gemini_local" ? "gemini login" : "claude login"}
+                            </span> and
                             retry.
                           </p>
                         )}

@@ -19,6 +19,7 @@
     "@paperclipai/adapter-cursor-local": "workspace:*",
     "@paperclipai/adapter-opencode-local": "workspace:*",
     "@paperclipai/adapter-openclaw": "workspace:*",
+    "@paperclipai/adapter-gemini-local": "workspace:*",
     "@paperclipai/adapter-utils": "workspace:*",
     "@paperclipai/shared": "workspace:*",
     "@radix-ui/react-slot": "^1.2.4",

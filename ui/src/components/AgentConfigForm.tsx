@@ -40,6 +40,7 @@ import {
 import { defaultCreateValues } from "./agent-config-defaults";
 import { getUIAdapter } from "../adapters";
 import { ClaudeLocalAdvancedFields } from "../adapters/claude-local/config-fields";
+import { GeminiLocalAdvancedFields } from "../adapters/gemini-local/config-fields";
 import { MarkdownEditor } from "./MarkdownEditor";
 import { ChoosePathButton } from "./PathInstructionsModal";
 
@@ -148,6 +149,13 @@ const cursorModeOptions = [
 ] as const;
 
 const claudeThinkingEffortOptions = [
+  { id: "", label: "Auto" },
+  { id: "low", label: "Low" },
+  { id: "medium", label: "Medium" },
+  { id: "high", label: "High" },
+] as const;
+
+const geminiThinkingEffortOptions = [
   { id: "", label: "Auto" },
   { id: "low", label: "Low" },
   { id: "medium", label: "Medium" },
@@ -275,7 +283,8 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
     adapterType === "claude_local" ||
     adapterType === "codex_local" ||
     adapterType === "opencode_local" ||
-    adapterType === "cursor";
+    adapterType === "cursor" ||
+    adapterType === "gemini_local";
   const uiAdapter = useMemo(() => getUIAdapter(adapterType), [adapterType]);
 
   // Fetch adapter models for the effective adapter type
@@ -349,7 +358,9 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
         ? cursorModeOptions
         : adapterType === "opencode_local"
           ? opencodeVariantOptions
-          : claudeThinkingEffortOptions;
+          : adapterType === "gemini_local"
+            ? geminiThinkingEffortOptions
+            : claudeThinkingEffortOptions;
   const currentThinkingEffort = isCreate
     ? val!.thinkingEffort
     : adapterType === "codex_local"
@@ -672,6 +683,9 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
             {adapterType === "claude_local" && (
               <ClaudeLocalAdvancedFields {...adapterFieldProps} />
             )}
+            {adapterType === "gemini_local" && (
+              <GeminiLocalAdvancedFields {...adapterFieldProps} />
+            )}
 
             <Field label="Extra args (comma-separated)" hint={help.extraArgs}>
               <DraftInput
@@ -876,7 +890,7 @@ function AdapterEnvironmentResult({ result }: { result: AdapterEnvironmentTestRe
 
 /* ---- Internal sub-components ---- */
 
-const ENABLED_ADAPTER_TYPES = new Set(["claude_local", "codex_local", "gemini_sdk", "opencode_local", "cursor"]);
+const ENABLED_ADAPTER_TYPES = new Set(["claude_local", "codex_local", "gemini_local", "opencode_local", "cursor"]);
 
 /** Display list includes all real adapter types plus UI-only coming-soon entries. */
 const ADAPTER_DISPLAY_LIST: { value: string; label: string; comingSoon: boolean }[] = [
