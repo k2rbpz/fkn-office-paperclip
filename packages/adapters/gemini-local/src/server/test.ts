@@ -95,23 +95,23 @@ export async function testEnvironment(
     });
   }
 
-  const configApiKey = env.ANTHROPIC_API_KEY;
-  const hostApiKey = process.env.ANTHROPIC_API_KEY;
+  const configApiKey = env.GOOGLE_API_KEY;
+  const hostApiKey = process.env.GOOGLE_API_KEY;
   if (isNonEmpty(configApiKey) || isNonEmpty(hostApiKey)) {
     const source = isNonEmpty(configApiKey) ? "adapter config env" : "server environment";
     checks.push({
-      code: "gemini_anthropic_api_key_overrides_subscription",
+      code: "gemini_google_api_key_overrides_subscription",
       level: "warn",
       message:
-        "ANTHROPIC_API_KEY is set. Gemini will use API-key auth instead of subscription credentials.",
+        "GOOGLE_API_KEY is set. Gemini will use API-key auth instead of subscription credentials.",
       detail: `Detected in ${source}.`,
-      hint: "Unset ANTHROPIC_API_KEY if you want subscription-based Gemini login behavior.",
+      hint: "Unset GOOGLE_API_KEY if you want subscription-based Gemini login behavior.",
     });
   } else {
     checks.push({
       code: "gemini_subscription_mode_possible",
       level: "info",
-      message: "ANTHROPIC_API_KEY is not set; subscription-based auth can be used if Gemini is logged in.",
+      message: "GOOGLE_API_KEY is not set; subscription-based auth can be used if Gemini is logged in.",
     });
   }
 
@@ -128,9 +128,6 @@ export async function testEnvironment(
       });
     } else {
       const model = asString(config.model, "").trim();
-      const effort = asString(config.effort, "").trim();
-      const chrome = asBoolean(config.chrome, false);
-      const maxTurns = asNumber(config.maxTurnsPerRun, 0);
       const dangerouslySkipPermissions = asBoolean(config.dangerouslySkipPermissions, false);
       const extraArgs = (() => {
         const fromExtraArgs = asStringArray(config.extraArgs);
@@ -139,10 +136,8 @@ export async function testEnvironment(
       })();
 
       const args = ["-p", "Respond with hello.", "--output-format", "stream-json"];
-      if (dangerouslySkipPermissions) args.push("--dangerously-skip-permissions");
-      if (chrome) args.push("--chrome");
+      if (dangerouslySkipPermissions) args.push("--yolo");
       if (model) args.push("--model", model);
-      if (effort) args.push("--effort", effort);
       if (extraArgs.length > 0) args.push(...extraArgs);
 
       const probe = await runChildProcess(

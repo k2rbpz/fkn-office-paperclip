@@ -104,9 +104,9 @@ export function OnboardingWizard() {
     useState<AdapterEnvironmentTestResult | null>(null);
   const [adapterEnvError, setAdapterEnvError] = useState<string | null>(null);
   const [adapterEnvLoading, setAdapterEnvLoading] = useState(false);
-  const [forceUnsetAnthropicApiKey, setForceUnsetAnthropicApiKey] =
+  const [forceUnsetApiKey, setForceUnsetApiKey] =
     useState(false);
-  const [unsetAnthropicLoading, setUnsetAnthropicLoading] = useState(false);
+  const [unsetApiKeyLoading, setUnsetApiKeyLoading] = useState(false);
 
   // Step 3
   const [taskTitle, setTaskTitle] = useState("Create your CEO HEARTBEAT.md");
@@ -190,15 +190,16 @@ export function OnboardingWizard() {
   }, [step, adapterType, cwd, model, command, args, url]);
 
   const selectedModel = (adapterModels ?? []).find((m) => m.id === model);
-  const hasAnthropicApiKeyOverrideCheck =
+  const hasApiKeyOverrideCheck =
     adapterEnvResult?.checks.some(
       (check) =>
-        check.code === "claude_anthropic_api_key_overrides_subscription"
+        check.code === "claude_anthropic_api_key_overrides_subscription" ||
+        check.code === "gemini_google_api_key_overrides_subscription"
     ) ?? false;
-  const shouldSuggestUnsetAnthropicApiKey =
-    adapterType === "claude_local" &&
+  const shouldSuggestUnsetApiKey =
+    (adapterType === "claude_local" || adapterType === "gemini_local") &&
     adapterEnvResult?.status === "fail" &&
-    hasAnthropicApiKeyOverrideCheck;
+    hasApiKeyOverrideCheck;
 
   function reset() {
     setStep(1);
@@ -216,8 +217,8 @@ export function OnboardingWizard() {
     setAdapterEnvResult(null);
     setAdapterEnvError(null);
     setAdapterEnvLoading(false);
-    setForceUnsetAnthropicApiKey(false);
-    setUnsetAnthropicLoading(false);
+    setForceUnsetApiKey(false);
+    setUnsetApiKeyLoading(false);
     setTaskTitle("Create your CEO HEARTBEAT.md");
     setTaskDescription(DEFAULT_TASK_DESCRIPTION);
     setCreatedCompanyId(null);
@@ -249,13 +250,13 @@ export function OnboardingWizard() {
       args,
       url,
       thinkingEffort,
-      dangerouslySkipPermissions: adapterType === "claude_local",
+      dangerouslySkipPermissions: adapterType === "claude_local" || adapterType === "gemini_local",
       dangerouslyBypassSandbox:
         adapterType === "codex_local"
           ? DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX
           : defaultCreateValues.dangerouslyBypassSandbox
     });
-    if (adapterType === "claude_local" && forceUnsetAnthropicApiKey) {
+    if (adapterType === "claude_local" && forceUnsetApiKey) {
       const env =
         typeof config.env === "object" &&
           config.env !== null &&
@@ -263,6 +264,15 @@ export function OnboardingWizard() {
           ? { ...(config.env as Record<string, unknown>) }
           : {};
       env.ANTHROPIC_API_KEY = { type: "plain", value: "" };
+      config.env = env;
+    } else if (adapterType === "gemini_local" && forceUnsetApiKey) {
+      const env =
+        typeof config.env === "object" &&
+          config.env !== null &&
+          !Array.isArray(config.env)
+          ? { ...(config.env as Record<string, unknown>) }
+          : {};
+      env.GOOGLE_API_KEY = { type: "plain", value: "" };
       config.env = env;
     }
     return config;
@@ -365,12 +375,12 @@ export function OnboardingWizard() {
     }
   }
 
-  async function handleUnsetAnthropicApiKey() {
-    if (!createdCompanyId || unsetAnthropicLoading) return;
-    setUnsetAnthropicLoading(true);
+  async function handleUnsetApiKey() {
+    if (!createdCompanyId || unsetApiKeyLoading) return;
+    setUnsetApiKeyLoading(true);
     setError(null);
     setAdapterEnvError(null);
-    setForceUnsetAnthropicApiKey(true);
+    setForceUnsetApiKey(true);
 
     const configWithUnset = (() => {
       const config = buildAdapterConfig();
@@ -380,7 +390,8 @@ export function OnboardingWizard() {
           !Array.isArray(config.env)
           ? { ...(config.env as Record<string, unknown>) }
           : {};
-      env.ANTHROPIC_API_KEY = { type: "plain", value: "" };
+      const keyName = adapterType === "gemini_local" ? "GOOGLE_API_KEY" : "ANTHROPIC_API_KEY";
+      env[keyName] = { type: "plain", value: "" };
       config.env = env;
       return config;
     })();
@@ -399,18 +410,20 @@ export function OnboardingWizard() {
 
       const result = await runAdapterEnvironmentTest(configWithUnset);
       if (result?.status === "fail") {
+        const keyName = adapterType === "gemini_local" ? "GOOGLE_API_KEY" : "ANTHROPIC_API_KEY";
         setError(
-          "Retried with ANTHROPIC_API_KEY unset in adapter config, but the environment test is still failing."
+          `Retried with ${keyName} unset in adapter config, but the environment test is still failing.`
         );
       }
     } catch (err) {
+      const keyName = adapterType === "gemini_local" ? "GOOGLE_API_KEY" : "ANTHROPIC_API_KEY";
       setError(
         err instanceof Error
           ? err.message
-          : "Failed to unset ANTHROPIC_API_KEY and retry."
+          : `Failed to unset ${keyName} and retry.`
       );
     } finally {
-      setUnsetAnthropicLoading(false);
+      setUnsetApiKeyLoading(false);
     }
   }
 
@@ -839,20 +852,20 @@ export function OnboardingWizard() {
                         <AdapterEnvironmentResult result={adapterEnvResult} />
                       )}
 
-                      {shouldSuggestUnsetAnthropicApiKey && (
+                      {shouldSuggestUnsetApiKey && (
                         <div className="rounded-md border border-amber-300/60 bg-amber-50/40 px-2.5 py-2 space-y-2">
                           <p className="text-[11px] text-amber-900/90 leading-relaxed">
-                            Gemini failed while <span className="font-mono">PAPERCLIP_API_KEY</span> is set.
+                            {adapterType === "gemini_local" ? "Gemini" : "Claude"} failed while <span className="font-mono">{adapterType === "gemini_local" ? "GOOGLE_API_KEY" : "ANTHROPIC_API_KEY"}</span> is set.
                             You can clear it in this CEO adapter config and retry the probe.
                           </p>
                           <Button
                             size="sm"
                             variant="outline"
                             className="h-7 px-2.5 text-xs"
-                            disabled={adapterEnvLoading || unsetAnthropicLoading}
-                            onClick={() => void handleUnsetAnthropicApiKey()}
+                            disabled={adapterEnvLoading || unsetApiKeyLoading}
+                            onClick={() => void handleUnsetApiKey()}
                           >
-                            {unsetAnthropicLoading ? "Retrying..." : "Unset ANTHROPIC_API_KEY"}
+                            {unsetApiKeyLoading ? "Retrying..." : `Unset ${adapterType === "gemini_local" ? "GOOGLE_API_KEY" : "ANTHROPIC_API_KEY"}`}
                           </Button>
                         </div>
                       )}

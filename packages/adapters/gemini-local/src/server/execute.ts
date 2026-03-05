@@ -43,7 +43,7 @@ async function resolvePaperclipSkillsDir(): Promise<string | null> {
 
 /**
  * Create a tmpdir with `.gemini/skills/` containing symlinks to skills from
- * the repo's `skills/` directory, so `--add-dir` makes Gemini Code discover
+ * the repo's `skills/` directory, so `--include-directories` makes Gemini Code discover
  * them as proper registered skills.
  */
 async function buildSkillsDir(): Promise<string> {
@@ -281,7 +281,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const instructionsFileDir = instructionsFilePath ? `${path.dirname(instructionsFilePath)}/` : "";
   const commandNotes = instructionsFilePath
     ? [
-      `Injected agent instructions via --append-system-prompt-file ${instructionsFilePath} (with path directive appended)`,
+      `Injected agent instructions from ${instructionsFilePath} (with path directive appended) into the prompt`,
     ]
     : [];
 
@@ -306,16 +306,13 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const billingType = resolveGeminiBillingType(env);
   const skillsDir = await buildSkillsDir();
 
-  // When instructionsFilePath is configured, create a combined temp file that
-  // includes both the file content and the path directive, so we only need
-  // --append-system-prompt-file (Gemini CLI forbids using both flags together).
-  let effectiveInstructionsFilePath = instructionsFilePath;
+  // Handle instructions: since some Gemini CLI versions lack --append-system-prompt-file,
+  // we'll prepend them to the prompt sent via stdin.
+  let instructionsPrefix = "";
   if (instructionsFilePath) {
     const instructionsContent = await fs.readFile(instructionsFilePath, "utf-8");
-    const pathDirective = `\nThe above agent instructions were loaded from ${instructionsFilePath}. Resolve any relative file references from ${instructionsFileDir}.`;
-    const combinedPath = path.join(skillsDir, "agent-instructions.md");
-    await fs.writeFile(combinedPath, instructionsContent + pathDirective, "utf-8");
-    effectiveInstructionsFilePath = combinedPath;
+    const pathDirective = `\n[System Note: The following agent instructions were loaded from ${instructionsFilePath}. Resolve any relative file references from ${instructionsFileDir}.]\n`;
+    instructionsPrefix = instructionsContent + pathDirective + "\n---\n\n";
   }
 
   const runtimeSessionParams = parseObject(runtime.sessionParams);
@@ -331,7 +328,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       `[paperclip] Gemini session "${runtimeSessionId}" was saved for cwd "${runtimeSessionCwd}" and will not be resumed in "${cwd}".\n`,
     );
   }
-  const prompt = renderTemplate(promptTemplate, {
+  const rawPrompt = renderTemplate(promptTemplate, {
     agentId: agent.id,
     companyId: agent.companyId,
     runId,
@@ -340,18 +337,14 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     run: { id: runId, source: "on_demand" },
     context,
   });
+  const prompt = instructionsPrefix + rawPrompt;
 
   const buildGeminiArgs = (resumeSessionId: string | null) => {
     const args = ["-p", "", "--output-format", "stream-json"];
     if (resumeSessionId) args.push("--resume", resumeSessionId);
-    if (dangerouslySkipPermissions) args.push("--dangerously-skip-permissions");
-    if (chrome) args.push("--chrome");
+    if (dangerouslySkipPermissions) args.push("--yolo");
     if (model) args.push("--model", model);
-    if (effort) args.push("--effort", effort);
-    if (effectiveInstructionsFilePath) {
-      args.push("--append-system-prompt-file", effectiveInstructionsFilePath);
-    }
-    args.push("--add-dir", skillsDir);
+    args.push("--include-directories", skillsDir);
     if (extraArgs.length > 0) args.push(...extraArgs);
     return args;
   };

@@ -67,10 +67,16 @@ interface IssueDraft {
   assigneeUseProjectWorkspace: boolean;
 }
 
-const ISSUE_OVERRIDE_ADAPTER_TYPES = new Set(["claude_local", "codex_local", "opencode_local"]);
+const ISSUE_OVERRIDE_ADAPTER_TYPES = new Set(["claude_local", "codex_local", "opencode_local", "gemini_local"]);
 
 const ISSUE_THINKING_EFFORT_OPTIONS = {
   claude_local: [
+    { value: "", label: "Default" },
+    { value: "low", label: "Low" },
+    { value: "medium", label: "Medium" },
+    { value: "high", label: "High" },
+  ],
+  gemini_local: [
     { value: "", label: "Default" },
     { value: "low", label: "Low" },
     { value: "medium", label: "Medium" },
@@ -112,11 +118,11 @@ function buildAssigneeAdapterOverrides(input: {
       adapterConfig.modelReasoningEffort = input.thinkingEffortOverride;
     } else if (adapterType === "opencode_local") {
       adapterConfig.variant = input.thinkingEffortOverride;
-    } else if (adapterType === "claude_local") {
+    } else if (adapterType === "claude_local" || adapterType === "gemini_local") {
       adapterConfig.effort = input.thinkingEffortOverride;
     }
   }
-  if (adapterType === "claude_local" && input.chrome) {
+  if ((adapterType === "claude_local" || adapterType === "gemini_local") && input.chrome) {
     adapterConfig.chrome = true;
   }
 
