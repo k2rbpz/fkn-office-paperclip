@@ -127,7 +127,7 @@ export async function testEnvironment(
         hint: "Use the `gemini` CLI command to run the automatic login and installation probe.",
       });
     } else {
-      const model = asString(config.model, "gemini-2.5-flash").trim();
+      const model = asString(config.model, "").trim();
       const dangerouslySkipPermissions = asBoolean(config.dangerouslySkipPermissions, false);
       const extraArgs = (() => {
         const fromExtraArgs = asStringArray(config.extraArgs);
