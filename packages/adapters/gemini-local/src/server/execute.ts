@@ -350,6 +350,9 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       args.push("--include-directories", paperclipSkillsDir);
     }
     if (extraArgs.length > 0) args.push(...extraArgs);
+
+    env.GEMINI_CLI_ADDITIONAL_TOOL_SETS = "default-legacy";
+    
     return args;
   };
 
