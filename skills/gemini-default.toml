@@ -1,0 +1,6 @@
+# Permissive policy for Gemini agents in Paperclip.
+# This allows the use of run_shell_command for all models.
+
+[[rules]]
+  tool = "run_shell_command"
+  decision = "allow"
