@@ -66,7 +66,9 @@ export async function testEnvironment(
   }
 
   const envConfig = parseObject(config.env);
-  const env: Record<string, string> = {};
+  const env: Record<string, string> = {
+    GEMINI_CLI_NO_RELAUNCH: "true",
+  };
   for (const [key, value] of Object.entries(envConfig)) {
     if (typeof value === "string") env[key] = value;
   }
@@ -149,7 +151,7 @@ export async function testEnvironment(
         args.push("--sandbox=none");
       }
       if (extraArgs.length > 0) args.push(...extraArgs);
-      args.push("Respond with hello.");
+      args.push("--prompt", "Respond with hello.");
 
       const probe = await runChildProcess(
         `gemini-envtest-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -202,13 +204,21 @@ export async function testEnvironment(
           ...(detail ? { detail } : {}),
           hint: "Run `gemini auth` or configure GEMINI_API_KEY / GOOGLE_API_KEY in adapter env/shell, then retry the probe.",
         });
+      } else if (detail && detail.includes("Failed to relaunch the CLI process")) {
+        checks.push({
+          code: "gemini_hello_probe_quota_or_auth_failed",
+          level: "error",
+          message: "Gemini CLI failed unexpectedly, likely due to anonymous quota exhaustion or missing credentials.",
+          detail: "The CLI crashed with an unhandled error inside Docker. This typically happens when using the free anonymous tier without an API key and hitting a rate limit.",
+          hint: "Provide an API key by setting the GEMINI_API_KEY environment variable in your Docker config, or in the CEO agent's 'ENV overrides' field. Then run the environment check again.",
+        });
       } else {
         checks.push({
           code: "gemini_hello_probe_failed",
           level: "error",
           message: "Gemini hello probe failed.",
           ...(detail ? { detail } : {}),
-          hint: "Run `gemini --output-format json \"Respond with hello.\"` manually in this working directory to debug.",
+          hint: "Run `gemini --output-format json --prompt \"Respond with hello.\"` manually in this working directory to debug.",
         });
       }
     }
